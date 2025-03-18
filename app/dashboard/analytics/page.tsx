@@ -22,6 +22,7 @@ import {
   ResponsiveContainer,
 } from "@/components/ui/chart"
 
+
 // Sample data for charts
 const weeklyData = [
   { day: "Mon", hours: 2.5, tasks: 3 },
@@ -58,7 +59,6 @@ const completionRateData = [
 
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState("week")
-
   return (
     <div className="w-full p-4 sm:p-8 max-w-[1600px] mx-auto">
       <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -134,7 +134,7 @@ export default function AnalyticsPage() {
             <CardDescription>Your study hours and completed tasks by day</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[250px] sm:h-[300px]">
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={weeklyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -157,7 +157,7 @@ export default function AnalyticsPage() {
             <CardDescription>Distribution of study time across subjects</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[250px] sm:h-[300px]">
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -165,7 +165,7 @@ export default function AnalyticsPage() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    outerRadius={window.innerWidth < 640 ? 60 : 80}
+                    outerRadius={80}
                     fill="#8884d8"
                     dataKey="hours"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
@@ -188,7 +188,7 @@ export default function AnalyticsPage() {
             <CardDescription>When you're most productive</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[250px] sm:h-[300px]">
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={timeOfDayData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -226,8 +226,8 @@ export default function AnalyticsPage() {
                     data={completionRateData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={window.innerWidth < 640 ? 30 : 40}
-                    outerRadius={window.innerWidth < 640 ? 60 : 80}
+                    innerRadius={40}
+                    outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
