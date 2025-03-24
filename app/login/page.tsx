@@ -256,18 +256,7 @@ export default function LoginPage() {
                   <p>agungfathul14@upi.edu</p>
                   <p className="font-mono">Password: Password123!</p>
                 </div>
-                <div className="text-left">
-                  <p>sarah.johnson@taskgenie.demo</p>
-                  <p className="font-mono">Password: SarahJ2023!</p>
-                </div>
-                <div className="text-left">
-                  <p>david.chen@taskgenie.demo</p>
-                  <p className="font-mono">Password: ChenDev2023!</p>
-                </div>
-                <div className="text-left">
-                  <p>maria.r@taskgenie.demo</p>
-                  <p className="font-mono">Password: MariaR2023!</p>
-                </div>
+                
               </div>
             </div>
           </CardFooter>
