@@ -38,7 +38,7 @@ const tasks = [
     difficulty: "Medium",
     subtasks: 10,
     dueDate: "2025-03-22",
-    collaborators: [{ id: "user2", email: "user2@example.com" }],
+    collaborators: [{ id: "1", email: "agungfathul14@upi.edu" }],
   },
   {
     id: 3,
@@ -47,7 +47,7 @@ const tasks = [
     difficulty: "Low",
     subtasks: 4,
     dueDate: "2025-03-30",
-    collaborators: [{ id: "user1", email: "user1@example.com" }],
+    collaborators: [{ id: "1", email: "agungfathul14@upi.edu" }],
   },
   {
     id: 4,
@@ -56,7 +56,7 @@ const tasks = [
     difficulty: "High",
     subtasks: 6,
     dueDate: "2025-03-21",
-    collaborators: [{ id: "user3", email: "user3@example.com" }],
+    collaborators: [{ id: "1", email: "agungfathul14@upi.edu" }],
   },
   {
     id: 5,
@@ -65,7 +65,7 @@ const tasks = [
     difficulty: "Medium",
     subtasks: 3,
     dueDate: "2025-04-05",
-    collaborators: [{ id: "user1", email: "user1@example.com" }],
+    collaborators: [{ id: "1", email: "agungfathul14@upi.edu" }],
   },
   {
     id: 6,
@@ -74,7 +74,7 @@ const tasks = [
     difficulty: "High",
     subtasks: 8,
     dueDate: "2025-04-10",
-    collaborators: [{ id: "user4", email: "user4@example.com" }],
+    collaborators: [{ id: "1", email: "agungfathul14@upi.edu" }],
   },
 ]
 
