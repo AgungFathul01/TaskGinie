@@ -1,36 +1,40 @@
 "use client"
 
-import { DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-
 import type React from "react"
 
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+import { Brain, Calendar, BarChart3, CreditCard, LogOut, Settings, User } from "lucide-react"
 import {
-  SidebarProvider,
   Sidebar,
   SidebarContent,
-  SidebarHeader,
   SidebarFooter,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarProvider,
 } from "@/components/ui/sidebar"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Brain, Calendar, CreditCard, LineChart, LogOut, Settings, User } from "lucide-react"
-import Link from "next/link"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
+  const { user, logout } = useAuth()
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full overflow-x-hidden">
@@ -55,6 +59,7 @@ export default function DashboardLayout({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
+                  isActive={pathname === "/dashboard"}
                   className="relative group flex items-center gap-3 rounded-lg px-3 py-2 text-base transition-all hover:bg-primary/10"
                 >
                   <Link href="/dashboard">
@@ -83,6 +88,7 @@ export default function DashboardLayout({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
+                  isActive={pathname === "/dashboard/calendar"}
                   className="relative group flex items-center gap-3 rounded-lg px-3 py-2 text-base transition-all hover:bg-primary/10"
                 >
                   <Link href="/dashboard/calendar">
@@ -95,11 +101,12 @@ export default function DashboardLayout({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
+                  isActive={pathname === "/dashboard/analytics"}
                   className="relative group flex items-center gap-3 rounded-lg px-3 py-2 text-base transition-all hover:bg-primary/10"
                 >
                   <Link href="/dashboard/analytics">
                     <div className="absolute left-0 h-full w-1 rounded-r-full bg-primary opacity-0 transition-opacity group-[.active]:opacity-100"></div>
-                    <LineChart className="h-5 w-5 text-primary/80 group-hover:text-primary" />
+                    <BarChart3 className="h-5 w-5 text-primary/80 group-hover:text-primary" />
                     <span>Analytics</span>
                   </Link>
                 </SidebarMenuButton>
@@ -113,6 +120,7 @@ export default function DashboardLayout({
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
+                  isActive={pathname === "/dashboard/subscription"}
                   className="relative group flex items-center gap-3 rounded-lg px-3 py-2 text-base transition-all hover:bg-primary/10"
                 >
                   <Link href="/dashboard/subscription">
@@ -127,12 +135,17 @@ export default function DashboardLayout({
           <SidebarFooter className="border-t p-6">
             <div className="flex items-center gap-4">
               <Avatar className="border-2 border-primary/20">
-                <AvatarImage src="/placeholder.svg?height=40&width=40" />
-                <AvatarFallback className="bg-primary/10 text-primary">AF</AvatarFallback>
+                <AvatarImage src={user?.avatar || "/placeholder.svg?height=40&width=40"} />
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  {user?.name
+                    ?.split(" ")
+                    .map((n) => n[0])
+                    .join("") || "U"}
+                </AvatarFallback>
               </Avatar>
               <div className="flex flex-col">
-                <span className="text-sm font-medium">Agung Fathul</span>
-                <span className="text-xs text-muted-foreground">agungfathul14@upi.edu</span>
+                <span className="text-sm font-medium">{user?.name || "Guest User"}</span>
+                <span className="text-xs text-muted-foreground">{user?.email || "guest@example.com"}</span>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -167,7 +180,7 @@ export default function DashboardLayout({
                     <span>Settings</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive">
+                  <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive" onClick={logout}>
                     <LogOut className="h-4 w-4" />
                     <span>Log out</span>
                   </DropdownMenuItem>

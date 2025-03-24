@@ -18,6 +18,12 @@ import {
   RefreshCw,
   Share2,
   Trash2,
+  Users,
+  UserPlus,
+  Mail,
+  X,
+  UserCircle,
+  BarChart3,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -35,6 +41,18 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 // Sample task data
 const taskData = {
@@ -48,12 +66,12 @@ const taskData = {
   progress: 0,
   estimatedTime: "8 hours",
   subtasks: [
-    { id: 1, title: "Research academic sources", completed: false, estimatedTime: "2 hours" },
-    { id: 2, title: "Create outline", completed: false, estimatedTime: "1 hour" },
-    { id: 3, title: "Write introduction", completed: false, estimatedTime: "1 hour" },
-    { id: 4, title: "Write main body sections", completed: false, estimatedTime: "3 hours" },
-    { id: 5, title: "Write conclusion", completed: false, estimatedTime: "30 minutes" },
-    { id: 6, title: "Format references", completed: false, estimatedTime: "30 minutes" },
+    { id: 1, title: "Research academic sources", completed: false, estimatedTime: "2 hours", assignedTo: null },
+    { id: 2, title: "Create outline", completed: false, estimatedTime: "1 hour", assignedTo: null },
+    { id: 3, title: "Write introduction", completed: false, estimatedTime: "1 hour", assignedTo: null },
+    { id: 4, title: "Write main body sections", completed: false, estimatedTime: "3 hours", assignedTo: null },
+    { id: 5, title: "Write conclusion", completed: false, estimatedTime: "30 minutes", assignedTo: null },
+    { id: 6, title: "Format references", completed: false, estimatedTime: "30 minutes", assignedTo: null },
   ],
   notes: [
     { id: 1, content: "Focus on coral reef degradation as a key example", timestamp: "2025-03-19T10:30:00" },
@@ -87,6 +105,78 @@ const taskData = {
       icon: "file",
     },
   ],
+  collaborators: [
+    {
+      id: 1,
+      name: "Agung Fathul",
+      email: "agungfathul14@upi.edu",
+      avatar: "/placeholder.svg?height=40&width=40",
+      role: "owner",
+    },
+  ],
+}
+
+// Sample users for collaborator search
+const sampleUsers = [
+  { id: 2, name: "Sarah Johnson", email: "sarah.j@example.com", avatar: "/placeholder.svg?height=40&width=40" },
+  { id: 3, name: "Michael Chen", email: "m.chen@example.com", avatar: "/placeholder.svg?height=40&width=40" },
+  { id: 4, name: "Priya Patel", email: "priya.p@example.com", avatar: "/placeholder.svg?height=40&width=40" },
+  { id: 5, name: "James Wilson", email: "j.wilson@example.com", avatar: "/placeholder.svg?height=40&width=40" },
+]
+
+// Sample analytics data
+const analyticsData = {
+  overallProgress: 50,
+  totalSubtasks: 6,
+  completedSubtasks: 3,
+  totalTimeSpent: 4.5,
+  estimatedCompletion: "Mar 24",
+  contributors: [
+    {
+      id: 1,
+      name: "Agung Fathul",
+      avatar: "/placeholder.svg?height=40&width=40",
+      contribution: 65,
+      tasksCompleted: 2,
+      hoursSpent: 3.2,
+      isTopContributor: true,
+    },
+    {
+      id: 2,
+      name: "Sarah Johnson",
+      avatar: "/placeholder.svg?height=40&width=40",
+      contribution: 25,
+      tasksCompleted: 1,
+      hoursSpent: 1.3,
+      isTopContributor: false,
+    },
+    {
+      id: 3,
+      name: "Michael Chen",
+      avatar: "/placeholder.svg?height=40&width=40",
+      contribution: 10,
+      tasksCompleted: 0,
+      hoursSpent: 0.5,
+      isTopContributor: false,
+    },
+  ],
+  aiInsights: {
+    progressOverview:
+      "The project is progressing at a moderate pace. You've completed 50% of subtasks, which is slightly behind the expected timeline.",
+    alert: "The 'Format references' subtask is approaching its deadline and hasn't been started yet.",
+    teamPerformance:
+      "Team collaboration is good, with active participation from most members. Agung Fathul is the most active contributor.",
+    teamInsights: [
+      "Agung has completed the most subtasks and spent the most time on the project.",
+      "Sarah is making good progress on her assigned subtask.",
+      "Michael has recently joined and is still getting up to speed.",
+    ],
+    recommendations: [
+      "Consider reassigning the 'Format references' subtask to ensure it's completed on time.",
+      "Schedule a quick team sync to align on the remaining work.",
+      "Focus on completing the 'Write main body sections' subtask next as it has the highest time estimate.",
+    ],
+  },
 }
 
 export default function TaskDetailPage({ params, searchParams }) {
@@ -104,6 +194,14 @@ export default function TaskDetailPage({ params, searchParams }) {
   const [newNote, setNewNote] = useState("")
   const [sessionTime, setSessionTime] = useState(0)
   const [sessionSubtasksCompleted, setSessionSubtasksCompleted] = useState(0)
+
+  // Collaboration state
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState([])
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [showInviteDialog, setShowInviteDialog] = useState(false)
+  const [selectedSubtaskId, setSelectedSubtaskId] = useState(null)
+  const [selectedCollaboratorId, setSelectedCollaboratorId] = useState(null)
 
   // UseEffect to update the timer every second
   useEffect(() => {
@@ -149,6 +247,21 @@ export default function TaskDetailPage({ params, searchParams }) {
 
     return () => clearInterval(interval) // Cleanup interval on unmount
   }, [timerActive, timerMinutes, timerSeconds, isBreak])
+
+  // Search for users when query changes
+  useEffect(() => {
+    if (searchQuery.length > 1) {
+      // Filter sample users based on search query
+      const filteredUsers = sampleUsers.filter(
+        (user) =>
+          user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.email.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+      setSearchResults(filteredUsers)
+    } else {
+      setSearchResults([])
+    }
+  }, [searchQuery])
 
   // Calculate progress
   const calculateProgress = () => {
@@ -240,6 +353,77 @@ export default function TaskDetailPage({ params, searchParams }) {
     }
   }
 
+  // Add collaborator
+  const addCollaborator = (user) => {
+    // Check if user is already a collaborator
+    if (task.collaborators.some((collab) => collab.id === user.id)) {
+      return
+    }
+
+    setTask((prevTask) => ({
+      ...prevTask,
+      collaborators: [...prevTask.collaborators, { ...user, role: "collaborator" }],
+    }))
+
+    // Clear search
+    setSearchQuery("")
+    setSearchResults([])
+  }
+
+  // Invite collaborator by email
+  const inviteCollaborator = () => {
+    if (inviteEmail.trim() !== "" && inviteEmail.includes("@")) {
+      const newCollaborator = {
+        id: Date.now(),
+        name: inviteEmail.split("@")[0],
+        email: inviteEmail,
+        avatar: "/placeholder.svg?height=40&width=40",
+        role: "pending",
+      }
+
+      setTask((prevTask) => ({
+        ...prevTask,
+        collaborators: [...prevTask.collaborators, newCollaborator],
+      }))
+
+      setInviteEmail("")
+      setShowInviteDialog(false)
+    }
+  }
+
+  // Remove collaborator
+  const removeCollaborator = (collaboratorId) => {
+    setTask((prevTask) => ({
+      ...prevTask,
+      collaborators: prevTask.collaborators.filter((collab) => collab.id !== collaboratorId),
+      // Also remove any assignments for this collaborator
+      subtasks: prevTask.subtasks.map((subtask) =>
+        subtask.assignedTo === collaboratorId ? { ...subtask, assignedTo: null } : subtask,
+      ),
+    }))
+  }
+
+  // Assign subtask to collaborator
+  const assignSubtask = () => {
+    if (selectedSubtaskId && selectedCollaboratorId) {
+      setTask((prevTask) => ({
+        ...prevTask,
+        subtasks: prevTask.subtasks.map((subtask) =>
+          subtask.id === selectedSubtaskId ? { ...subtask, assignedTo: selectedCollaboratorId } : subtask,
+        ),
+      }))
+
+      // Reset selection
+      setSelectedSubtaskId(null)
+      setSelectedCollaboratorId(null)
+    }
+  }
+
+  // Get collaborator by ID
+  const getCollaborator = (collaboratorId) => {
+    return task.collaborators.find((collab) => collab.id === collaboratorId) || null
+  }
+
   return (
     <div className="w-full p-4 sm:p-8 max-w-[1600px] mx-auto">
       {isNewTask && (
@@ -287,6 +471,12 @@ export default function TaskDetailPage({ params, searchParams }) {
             </svg>
             Mark as Complete
           </Button>
+          <Link href={`/dashboard/task/${id}/analytics`}>
+            <Button variant="outline" className="gap-2">
+              <BarChart3 className="h-4 w-4" />
+              View Analytics
+            </Button>
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon">
@@ -371,28 +561,204 @@ export default function TaskDetailPage({ params, searchParams }) {
             </CardContent>
           </Card>
 
+          {/* Collaborators Card */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="h-5 w-5 text-primary"
-                >
-                  <path d="M8 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1"></path>
-                  <path d="M12 14v4"></path>
-                  <path d="M12 11v.01"></path>
-                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                </svg>
-                Subtasks
-              </CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  Collaborators
+                </CardTitle>
+                <CardDescription>People working on this task with you</CardDescription>
+              </div>
+              <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="gap-1">
+                    <UserPlus className="h-4 w-4" />
+                    <span>Invite</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Invite Collaborators</DialogTitle>
+                    <DialogDescription>Add team members to collaborate on this task.</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium">Search by name or email</h3>
+                      <Input
+                        placeholder="Search users..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                      {searchResults.length > 0 && (
+                        <div className="mt-2 max-h-40 overflow-y-auto rounded-md border">
+                          {searchResults.map((user) => (
+                            <div
+                              key={user.id}
+                              className="flex items-center justify-between p-2 hover:bg-muted/50 cursor-pointer"
+                              onClick={() => addCollaborator(user)}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarImage src={user.avatar} alt={user.name} />
+                                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <p className="text-sm font-medium">{user.name}</p>
+                                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                                </div>
+                              </div>
+                              <Button variant="ghost" size="sm">
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <Separator />
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium">Invite by email</h3>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="email@example.com"
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                        />
+                        <Button onClick={inviteCollaborator} disabled={!inviteEmail.includes("@")}>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Invite
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {task.collaborators.map((collaborator) => (
+                  <div key={collaborator.id} className="flex items-center justify-between rounded-lg border p-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarImage src={collaborator.avatar} alt={collaborator.name} />
+                        <AvatarFallback>{collaborator.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{collaborator.name}</p>
+                        <p className="text-xs text-muted-foreground">{collaborator.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant={
+                          collaborator.role === "owner"
+                            ? "default"
+                            : collaborator.role === "pending"
+                              ? "outline"
+                              : "secondary"
+                        }
+                      >
+                        {collaborator.role === "owner"
+                          ? "Owner"
+                          : collaborator.role === "pending"
+                            ? "Pending"
+                            : "Collaborator"}
+                      </Badge>
+                      {collaborator.role !== "owner" && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => removeCollaborator(collaborator.id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-5 w-5 text-primary"
+                  >
+                    <path d="M8 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1"></path>
+                    <path d="M12 14v4"></path>
+                    <path d="M12 11v.01"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                  </svg>
+                  Subtasks
+                </CardTitle>
+              </div>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    Assign
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Assign Subtask</DialogTitle>
+                    <DialogDescription>Assign a subtask to a collaborator</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium">Select Subtask</h3>
+                      <Select onValueChange={(value) => setSelectedSubtaskId(Number(value))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a subtask" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {task.subtasks.map((subtask) => (
+                            <SelectItem key={subtask.id} value={subtask.id.toString()}>
+                              {subtask.title}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="text-sm font-medium">Assign to</h3>
+                      <Select onValueChange={(value) => setSelectedCollaboratorId(Number(value))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a collaborator" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {task.collaborators.map((collaborator) => (
+                            <SelectItem key={collaborator.id} value={collaborator.id.toString()}>
+                              {collaborator.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={assignSubtask} disabled={!selectedSubtaskId || !selectedCollaboratorId}>
+                      Assign
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -404,12 +770,27 @@ export default function TaskDetailPage({ params, searchParams }) {
                         checked={subtask.completed}
                         onCheckedChange={() => toggleSubtask(subtask.id)}
                       />
-                      <label
-                        htmlFor={`subtask-${subtask.id}`}
-                        className={`${subtask.completed ? "line-through text-muted-foreground" : ""}`}
-                      >
-                        {subtask.title}
-                      </label>
+                      <div>
+                        <label
+                          htmlFor={`subtask-${subtask.id}`}
+                          className={`${subtask.completed ? "line-through text-muted-foreground" : ""}`}
+                        >
+                          {subtask.title}
+                        </label>
+                        {subtask.assignedTo && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Avatar className="h-4 w-4">
+                              <AvatarImage src={getCollaborator(subtask.assignedTo)?.avatar} />
+                              <AvatarFallback className="text-[8px]">
+                                {getCollaborator(subtask.assignedTo)?.name.charAt(0)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-muted-foreground">
+                              {getCollaborator(subtask.assignedTo)?.name}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -426,6 +807,11 @@ export default function TaskDetailPage({ params, searchParams }) {
                         <Play className="h-3.5 w-3.5 mr-1" />
                         Start
                       </Button>
+                      <Link href={`/dashboard/task/${task.id}/subtask/${subtask.id}`}>
+                        <Button variant="ghost" size="sm" className="h-7 px-2">
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 ))}
@@ -443,101 +829,30 @@ export default function TaskDetailPage({ params, searchParams }) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Brain className="h-5 w-5 text-primary" />
-                AI Suggestions & Resources
+                AI Suggestions
               </CardTitle>
-              <CardDescription>
-                TaskGenie's AI has analyzed your task and provided these suggestions and relevant resources.
-              </CardDescription>
+              <CardDescription>AI-generated suggestions and resources to help you complete this task</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="suggestions">
-                <TabsList className="grid w-full grid-cols-2 gap-1">
-                  <TabsTrigger value="suggestions">Suggestions</TabsTrigger>
-                  <TabsTrigger value="resources">Resources</TabsTrigger>
-                </TabsList>
-                <TabsContent value="suggestions" className="space-y-2 pt-4">
-                  {task.aiSuggestions.map((suggestion, index) => (
-                    <div key={index} className="flex items-start gap-3 rounded-lg border p-3">
-                      <div className="mt-0.5 rounded-full bg-primary/10 p-1">
-                        <Brain className="h-4 w-4 text-primary" />
-                      </div>
-                      <p>{suggestion}</p>
+              <div className="space-y-4">
+                <h3 className="font-medium">Suggestions</h3>
+                {task.aiSuggestions.map((suggestion, index) => (
+                  <div key={index} className="flex items-start gap-3 rounded-lg border p-3">
+                    <div className="mt-0.5 rounded-full bg-primary/10 p-1">
+                      <Brain className="h-4 w-4 text-primary" />
                     </div>
-                  ))}
-                </TabsContent>
-                <TabsContent value="resources" className="space-y-4 pt-4">
-                  {task.aiResources.map((resource, index) => (
-                    <div key={index} className="rounded-lg border p-3">
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {resource.icon === "document" && (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-4 w-4 text-blue-500"
-                            >
-                              <path d="M18 6h-5c-1 0-2 1-2 2v9c0 1 1 2 2 2h9c1 0 2-1 2-2v-5"></path>
-                              <path d="M12 12.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Z"></path>
-                              <path d="M3 13v-2a2 2 0 0 1 2-2h5"></path>
-                              <path d="m9 16 1-1-1-1"></path>
-                              <path d="M14 16h.01"></path>
-                            </svg>
-                          )}
-                          {resource.icon === "video" && (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-4 w-4 text-red-500"
-                            >
-                              <path d="m22 8-6 4 6 4V8Z"></path>
-                              <rect x="2" y="6" width="14" height="12" rx="2" ry="2"></rect>
-                            </svg>
-                          )}
-                          {resource.icon === "file" && (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="24"
-                              height="24"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-4 w-4 text-green-500"
-                            >
-                              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
-                              <polyline points="14 2 14 8 20 8"></polyline>
-                            </svg>
-                          )}
-                          <h4 className="font-medium">
-                            {resource.type === "article"
-                              ? "Journal Article"
-                              : resource.type === "video"
-                                ? "Video Lecture"
-                                : "Dataset"}
-                          </h4>
-                        </div>
-                        <Badge variant="outline">{resource.format || resource.duration}</Badge>
-                      </div>
-                      <p className="mb-1 text-sm">{resource.title}</p>
-                      <p className="text-xs text-muted-foreground">{resource.source}</p>
-                      <div className="mt-2 flex justify-end">
-                        <Button variant="ghost" size="sm" className="h-7 gap-1">
+                    <p>{suggestion}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-4 mt-6">
+                <h3 className="font-medium">Recommended Resources</h3>
+                {task.aiResources.map((resource, index) => (
+                  <div key={index} className="rounded-lg border p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {resource.icon === "document" && (
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="24"
@@ -548,25 +863,85 @@ export default function TaskDetailPage({ params, searchParams }) {
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
-                            className="h-3.5 w-3.5"
+                            className="h-4 w-4 text-blue-500"
                           >
-                            <path d="M12 5v14"></path>
-                            <path d="m19 12-7 7-7-7"></path>
+                            <path d="M18 6h-5c-1 0-2 1-2 2v9c0 1 1 2 2 2h9c1 0 2-1 2-2v-5"></path>
+                            <path d="M12 12.5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1Z"></path>
+                            <path d="M3 13v-2a2 2 0 0 1 2-2h5"></path>
+                            <path d="m9 16 1-1-1-1"></path>
+                            <path d="M14 16h.01"></path>
                           </svg>
-                          {resource.type === "video" ? "Watch" : "Download"}
-                        </Button>
+                        )}
+                        {resource.icon === "video" && (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4 text-red-500"
+                          >
+                            <path d="m22 8-6 4 6 4V8Z"></path>
+                            <rect x="2" y="6" width="14" height="12" rx="2" ry="2"></rect>
+                          </svg>
+                        )}
+                        {resource.icon === "file" && (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="24"
+                            height="24"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-4 w-4 text-green-500"
+                          >
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                          </svg>
+                        )}
+                        <h4 className="font-medium">
+                          {resource.type === "article"
+                            ? "Journal Article"
+                            : resource.type === "video"
+                              ? "Video Lecture"
+                              : "Dataset"}
+                        </h4>
                       </div>
+                      <Badge variant="outline">{resource.format || resource.duration}</Badge>
                     </div>
-                  ))}
-                </TabsContent>
-              </Tabs>
+                    <p className="mb-1 text-sm">{resource.title}</p>
+                    <p className="text-xs text-muted-foreground">{resource.source}</p>
+                    <div className="mt-2 flex justify-end">
+                      <Button variant="ghost" size="sm" className="h-7 gap-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-3.5 w-3.5"
+                        >
+                          <path d="M12 5v14"></path>
+                          <path d="m19 12-7 7-7-7"></path>
+                        </svg>
+                        {resource.type === "video" ? "Watch" : "Download"}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full">
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Get More Resources
-              </Button>
-            </CardFooter>
           </Card>
         </div>
 

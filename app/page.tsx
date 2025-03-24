@@ -23,13 +23,13 @@ export default function LandingPage() {
             <Link href="/learn-more" className="text-sm font-medium hover:text-primary">
               Learn More
             </Link>
-            <Link href="/dashboard" className="text-sm font-medium hover:text-primary">
-              Dashboard
-            </Link>
           </nav>
           <div className="flex items-center gap-4">
-            <Link href="/dashboard">
-              <Button>Get Started</Button>
+            <Link href="/login">
+              <Button variant="outline">Login</Button>
+            </Link>
+            <Link href="/register">
+              <Button>Register</Button>
             </Link>
           </div>
         </div>
@@ -334,7 +334,7 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="relative py-24 overflow-hidden">
-       {/* CTA */}
+        {/* CTA */}
         <div className="p-8 md:p-12 text-center">
           <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Transform Your Academic Workflow?</h2>
           <p className="text-muted-foreground max-w-[700px] mx-auto mb-8">
@@ -342,7 +342,7 @@ export default function LandingPage() {
             their productivity.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/dashboard">
+            <Link href="/register">
               <Button size="lg" className="gap-2">
                 Get Started Now <ArrowRight className="h-4 w-4" />
               </Button>

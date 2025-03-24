@@ -18,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useAuth } from "@/contexts/auth-context"
 
 // Sample data
 const tasks = [
@@ -28,6 +29,7 @@ const tasks = [
     difficulty: "High",
     subtasks: 5,
     dueDate: "2025-03-25",
+    collaborators: [{ id: "1", email: "agungfathul14@upi.edu" }],
   },
   {
     id: 2,
@@ -36,6 +38,7 @@ const tasks = [
     difficulty: "Medium",
     subtasks: 10,
     dueDate: "2025-03-22",
+    collaborators: [{ id: "user2", email: "user2@example.com" }],
   },
   {
     id: 3,
@@ -44,6 +47,7 @@ const tasks = [
     difficulty: "Low",
     subtasks: 4,
     dueDate: "2025-03-30",
+    collaborators: [{ id: "user1", email: "user1@example.com" }],
   },
   {
     id: 4,
@@ -52,6 +56,7 @@ const tasks = [
     difficulty: "High",
     subtasks: 6,
     dueDate: "2025-03-21",
+    collaborators: [{ id: "user3", email: "user3@example.com" }],
   },
   {
     id: 5,
@@ -60,6 +65,7 @@ const tasks = [
     difficulty: "Medium",
     subtasks: 3,
     dueDate: "2025-04-05",
+    collaborators: [{ id: "user1", email: "user1@example.com" }],
   },
   {
     id: 6,
@@ -68,10 +74,12 @@ const tasks = [
     difficulty: "High",
     subtasks: 8,
     dueDate: "2025-04-10",
+    collaborators: [{ id: "user4", email: "user4@example.com" }],
   },
 ]
 
 export default function Dashboard() {
+  const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
   const [activeTab, setActiveTab] = useState("all")
   const [layoutView, setLayoutView] = useState("grid") // "grid" or "list"
@@ -97,7 +105,12 @@ export default function Dashboard() {
       matchesTab = false
     }
 
-    return matchesSearch && matchesTab
+    // Check if the current user is a collaborator on this task
+    const isCollaborator =
+      task.collaborators &&
+      task.collaborators.some((collaborator) => collaborator.id === user.id || collaborator.email === user.email)
+
+    return matchesSearch && matchesTab && isCollaborator
   })
 
   // Get difficulty color

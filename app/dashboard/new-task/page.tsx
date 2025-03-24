@@ -3,7 +3,22 @@
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Brain, ChevronLeft, Clock, FileText, Loader2, Send, Edit, Plus, Trash2, Calendar } from "lucide-react"
+import {
+  Brain,
+  ChevronLeft,
+  Clock,
+  FileText,
+  Loader2,
+  Send,
+  Edit,
+  Plus,
+  Trash2,
+  Calendar,
+  Users,
+  UserPlus,
+  Mail,
+  X,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,6 +30,23 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+
+// Sample users for collaborator search
+const sampleUsers = [
+  { id: 2, name: "Sarah Johnson", email: "sarah.j@example.com", avatar: "/placeholder.svg?height=40&width=40" },
+  { id: 3, name: "Michael Chen", email: "m.chen@example.com", avatar: "/placeholder.svg?height=40&width=40" },
+  { id: 4, name: "Priya Patel", email: "priya.p@example.com", avatar: "/placeholder.svg?height=40&width=40" },
+  { id: 5, name: "James Wilson", email: "j.wilson@example.com", avatar: "/placeholder.svg?height=40&width=40" },
+]
 
 export default function NewTaskPage() {
   const router = useRouter()
@@ -26,11 +58,26 @@ export default function NewTaskPage() {
     dueDate: new Date(),
     priority: "",
     file: null,
+    collaborators: [
+      {
+        id: 1,
+        name: "Agung Fathul",
+        email: "agungfathul14@upi.edu",
+        avatar: "/placeholder.svg?height=40&width=40",
+        role: "owner",
+      },
+    ],
   })
   const [aiAnalysis, setAiAnalysis] = useState(null)
   const [editingSubtask, setEditingSubtask] = useState(null)
   const [newSubtask, setNewSubtask] = useState({ title: "", estimatedTime: "" })
   const [activeTab, setActiveTab] = useState("details")
+
+  // Collaboration state
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState([])
+  const [inviteEmail, setInviteEmail] = useState("")
+  const [showInviteDialog, setShowInviteDialog] = useState(false)
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -45,6 +92,70 @@ export default function NewTaskPage() {
     setTaskData((prev) => ({ ...prev, dueDate: date }))
   }
 
+  // Search for users when query changes
+  const handleSearchChange = (e) => {
+    const query = e.target.value
+    setSearchQuery(query)
+
+    if (query.length > 1) {
+      // Filter sample users based on search query
+      const filteredUsers = sampleUsers.filter(
+        (user) =>
+          user.name.toLowerCase().includes(query.toLowerCase()) ||
+          user.email.toLowerCase().includes(query.toLowerCase()),
+      )
+      setSearchResults(filteredUsers)
+    } else {
+      setSearchResults([])
+    }
+  }
+
+  // Add collaborator
+  const addCollaborator = (user) => {
+    // Check if user is already a collaborator
+    if (taskData.collaborators.some((collab) => collab.id === user.id)) {
+      return
+    }
+
+    setTaskData((prev) => ({
+      ...prev,
+      collaborators: [...prev.collaborators, { ...user, role: "collaborator" }],
+    }))
+
+    // Clear search
+    setSearchQuery("")
+    setSearchResults([])
+  }
+
+  // Invite collaborator by email
+  const inviteCollaborator = () => {
+    if (inviteEmail.trim() !== "" && inviteEmail.includes("@")) {
+      const newCollaborator = {
+        id: Date.now(),
+        name: inviteEmail.split("@")[0],
+        email: inviteEmail,
+        avatar: "/placeholder.svg?height=40&width=40",
+        role: "pending",
+      }
+
+      setTaskData((prev) => ({
+        ...prev,
+        collaborators: [...prev.collaborators, newCollaborator],
+      }))
+
+      setInviteEmail("")
+      setShowInviteDialog(false)
+    }
+  }
+
+  // Remove collaborator
+  const removeCollaborator = (collaboratorId) => {
+    setTaskData((prev) => ({
+      ...prev,
+      collaborators: prev.collaborators.filter((collab) => collab.id !== collaboratorId),
+    }))
+  }
+
   const analyzeTask = () => {
     setIsAnalyzing(true)
 
@@ -54,11 +165,11 @@ export default function NewTaskPage() {
         estimatedTime: "5 hours",
         difficulty: "Medium",
         subtasks: [
-          { id: 1, title: "Research relevant sources", estimatedTime: "1 hour" },
-          { id: 2, title: "Create outline", estimatedTime: "30 minutes" },
-          { id: 3, title: "Write first draft", estimatedTime: "2 hours" },
-          { id: 4, title: "Review and edit", estimatedTime: "1 hour" },
-          { id: 5, title: "Format and finalize", estimatedTime: "30 minutes" },
+          { id: 1, title: "Research relevant sources", estimatedTime: "1 hour", assignedTo: null },
+          { id: 2, title: "Create outline", estimatedTime: "30 minutes", assignedTo: null },
+          { id: 3, title: "Write first draft", estimatedTime: "2 hours", assignedTo: null },
+          { id: 4, title: "Review and edit", estimatedTime: "1 hour", assignedTo: null },
+          { id: 5, title: "Format and finalize", estimatedTime: "30 minutes", assignedTo: null },
         ],
         suggestedSchedule: [
           { day: "Day 1", tasks: ["Research relevant sources", "Create outline"] },
@@ -116,6 +227,7 @@ export default function NewTaskPage() {
           id: newId,
           title: newSubtask.title,
           estimatedTime: newSubtask.estimatedTime,
+          assignedTo: null,
         },
       ],
     }))
@@ -293,6 +405,120 @@ export default function NewTaskPage() {
                     <DatePicker date={taskData.dueDate} setDate={handleDateChange} />
                   </div>
 
+                  {/* Collaborators section */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="collaborators">Collaborators</Label>
+                      <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+                        <DialogTrigger asChild>
+                          <Button size="sm" variant="outline" className="gap-1">
+                            <UserPlus className="h-4 w-4" />
+                            <span>Add People</span>
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Invite Collaborators</DialogTitle>
+                            <DialogDescription>Add team members to collaborate on this task.</DialogDescription>
+                          </DialogHeader>
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <h3 className="text-sm font-medium">Search by name or email</h3>
+                              <Input placeholder="Search users..." value={searchQuery} onChange={handleSearchChange} />
+                              {searchResults.length > 0 && (
+                                <div className="mt-2 max-h-40 overflow-y-auto rounded-md border">
+                                  {searchResults.map((user) => (
+                                    <div
+                                      key={user.id}
+                                      className="flex items-center justify-between p-2 hover:bg-muted/50 cursor-pointer"
+                                      onClick={() => addCollaborator(user)}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <Avatar className="h-8 w-8">
+                                          <AvatarImage src={user.avatar} alt={user.name} />
+                                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                          <p className="text-sm font-medium">{user.name}</p>
+                                          <p className="text-xs text-muted-foreground">{user.email}</p>
+                                        </div>
+                                      </div>
+                                      <Button variant="ghost" size="sm">
+                                        <Plus className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <Separator />
+                            <div className="space-y-2">
+                              <h3 className="text-sm font-medium">Invite by email</h3>
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder="email@example.com"
+                                  type="email"
+                                  value={inviteEmail}
+                                  onChange={(e) => setInviteEmail(e.target.value)}
+                                />
+                                <Button onClick={inviteCollaborator} disabled={!inviteEmail.includes("@")}>
+                                  <Mail className="h-4 w-4 mr-2" />
+                                  Invite
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    <div className="rounded-md border">
+                      {taskData.collaborators.map((collaborator) => (
+                        <div
+                          key={collaborator.id}
+                          className="flex items-center justify-between p-2 border-b last:border-b-0"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={collaborator.avatar} alt={collaborator.name} />
+                              <AvatarFallback>{collaborator.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="text-sm font-medium">{collaborator.name}</p>
+                              <p className="text-xs text-muted-foreground">{collaborator.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={
+                                collaborator.role === "owner"
+                                  ? "default"
+                                  : collaborator.role === "pending"
+                                    ? "outline"
+                                    : "secondary"
+                              }
+                            >
+                              {collaborator.role === "owner"
+                                ? "Owner"
+                                : collaborator.role === "pending"
+                                  ? "Pending"
+                                  : "Collaborator"}
+                            </Badge>
+                            {collaborator.role !== "owner" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                onClick={() => removeCollaborator(collaborator.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Add file upload section */}
                   <div className="space-y-2">
                     <Label htmlFor="fileUpload">Upload Assignment File (Optional)</Label>
@@ -408,11 +634,11 @@ export default function NewTaskPage() {
                   </div>
                   <div className="rounded-lg bg-primary/10 p-3">
                     <h3 className="mb-1 font-medium flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-primary" />
-                      Upload Assignment Files
+                      <Users className="h-4 w-4 text-primary" />
+                      Collaborate Effectively
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      For the most accurate analysis, upload your assignment instructions or related documents.
+                      Add team members and assign specific subtasks to distribute the workload efficiently.
                     </p>
                   </div>
                 </CardContent>
@@ -713,6 +939,21 @@ export default function NewTaskPage() {
                     <div>
                       <h3 className="text-xs font-medium text-muted-foreground">Description</h3>
                       <p className="text-sm">{taskData.description}</p>
+                    </div>
+                    <Separator />
+                    <div>
+                      <h3 className="text-xs font-medium text-muted-foreground">Collaborators</h3>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {taskData.collaborators.map((collaborator) => (
+                          <div key={collaborator.id} className="flex items-center gap-1">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={collaborator.avatar} alt={collaborator.name} />
+                              <AvatarFallback>{collaborator.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{collaborator.name}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
